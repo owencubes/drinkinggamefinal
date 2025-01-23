@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drinks Leaderboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      background: radial-gradient(circle, rgba(63, 94, 251, 1) 0%, rgba(252, 70, 107, 1) 100%);
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 20px 0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 20px auto;
+      max-width: 400px;
+    }
+
+    li {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+.header3 {
+  align-items: left;
+  position: fixed;
+  top: 0;
+  {# width: 100%; #}
+  {# background: rgba(0, 0, 0, 0.9); #}
+  color: white;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 10;
+  text-align: left; /* Centering text horizontally */
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+}
+
+.header3 h3 {
+  margin: 0 0 10px 0; /* Adjusting margin to give some space between the heading and the list */
+  font-size: 1.2rem;
+}
+
+.header3 ul {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.header3 li {
+  background: rgba(255, 255, 255, 0.8);
+  color: #333;
+  margin: 0;
+  padding: 8px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+
+    #content {
+      padding-top: 5px;
+      position: sticky;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+    .header3 {
+        position: relative;
+    }
+      li {
+        font-size: 0.9rem;
+        padding: 10px;
+      }
+
+      .header3 h3 {
+        font-size: 1rem;
+      }
+
+      .header3 ul {
+        flex-direction: column;
+      }
+    
+      .header3 li {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header3">
+    <h3>All Time Alcoholics</h3>
+    <ul>
+      <li>🥇 Owen - 11</li>
+      <li>🥈 Cole - 9</li>
+      <li>🥉 Daniel - 7</li>
+    </ul>
+  </div>
+
+  <h1>Drink Leaderboard 🍾🍷🍸</h1>
+  <div id="content">
+    <p>Loading leaderboard...</p>
+  </div>
+
+  <script>
+    // Helper function to fetch leaderboard data and render it
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('http://localhost:3000/leaderboard');
+        if (!response.ok) throw new Error('Failed to fetch leaderboard data');
+        const leaderboard = await response.json();
+
+        const contentDiv = document.getElementById('content');
+        if (leaderboard.length === 0) {
+          contentDiv.innerHTML = '<p>No players yet. Scan the NFC to register!</p>';
+        } else {
+          const list = leaderboard
+            .map(
+              (player, i) =>
+                `<li>${i === 0 ? `👑 ${player.name}` : player.name} <span>${player.score} Drinks</span></li>`
+            )
+            .join('');
+          contentDiv.innerHTML = `<ul>${list}</ul>`;
+        }
+      } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+        document.getElementById('content').innerHTML = '<p>Error loading leaderboard.</p>';
+      }
+    }
+
+    // Function to send scan data to the backend
+    async function sendScanData() {
+      try {
+        const browserId = localStorage.getItem('browserId') || crypto.randomUUID();
+        localStorage.setItem('browserId', browserId);
+
+        let name = localStorage.getItem('name');
+        if (!name) {
+          name = prompt('Enter your name:');
+          if (!name) return; // Stop if no name is entered
+          localStorage.setItem('name', name);
+        }
+
+        const response = await fetch('http://localhost:3000/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ browserId, name }),
+        });
+
+        if (!response.ok) throw new Error('Failed to send scan data');
+        const data = await response.json();
+        console.log('Scan data sent successfully:', data);
+
+        // Refresh leaderboard after updating score
+        fetchLeaderboard();
+      } catch (err) {
+        console.error('Error sending scan data:', err);
+        alert('An error occurred. Please try again.');
+      }
+    }
+
+    // Initialize the page
+    async function init() {
+      // Trigger the scan flow
+      await sendScanData();
+
+      // Load and display the leaderboard
+      fetchLeaderboard();
+    }
+
+    // Run the init function when the page loads
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drinks Leaderboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+        background: rgb(63,94,251);
+        background: radial-gradient(circle, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%);    }
+    h1 {
+      color: #171717;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #DDDBF1;
+      margin: 3px 0;
+      padding: 3px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .header3 {
+        text-align: left;
+        position: fixed;
+    }
+  </style>
+</head>
+    <div class="header3">
+        <h3>All Time Alcoholics</h1>
+        <ul>
+            <li>🥇Owen - 11</li>
+            <li>🥈Cole - 9</li>
+            <li>🥉Daniel - 7</li>
+
+        </ul>
+    </div>
+
+
+<body>
+  <h1>Drink Leaderboard 🍾🍷🍸</h1>
+
+  <div> 
+  </div> 
+  <div id="content">
+    <p>Loading leaderboard...</p>
+  </div>
+
+  <script>
+    // Helper function to fetch leaderboard data and render it
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('http://localhost:3000/leaderboard');
+        if (!response.ok) throw new Error('Failed to fetch leaderboard data');
+        //const leaderboard = await response.json();
+
+        const leaderboard = [{name: 'nigga', score: 62 }, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}, {name: 'fag', score: 22}]
+
+        // Render the leaderboard
+        const contentDiv = document.getElementById('content');
+        if (leaderboard.length === 0) {
+          contentDiv.innerHTML = '<p>No players yet. Scan the NFC to register!</p>';
+        } else {
+          const list = leaderboard
+            .map((player, i) => `<li>${i === 0 ? `👑 ${player.name}`  : player.name} - ${player.score} Drinks</li>`)
+            .join('');
+          contentDiv.innerHTML = `<ul>${list}</ul>`;
+        }
+      } catch (err) {
+        console.error('Error fetching leaderboard:', err);
+        document.getElementById('content').innerHTML = '<p>Error loading leaderboard.</p>';
+      }
+    }
+
+    // Function to send scan data to the backend
+    async function sendScanData() {
+      try {
+        const browserId = localStorage.getItem('browserId') || crypto.randomUUID();
+        localStorage.setItem('browserId', browserId);
+
+        let name = localStorage.getItem('name');
+        if (!name) {
+          name = prompt('Enter your name:');
+          if (!name) return; // Stop if no name is entered
+          localStorage.setItem('name', name);
+        }
+
+        const response = await fetch('http://localhost:3000/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ browserId, name }),
+        });
+
+        if (!response.ok) throw new Error('Failed to send scan data');
+        const data = await response.json();
+        console.log('Scan data sent successfully:', data);
+
+        // Refresh leaderboard after updating score
+        fetchLeaderboard();
+      } catch (err) {
+        console.error('Error sending scan data:', err);
+        alert('An error occurred. Please try again.');
+      }
+    }
+
+    // Initialize the page
+    async function init() {
+      // Trigger the scan flow
+      await sendScanData();
+
+      // Load and display the leaderboard
+      fetchLeaderboard();
+    }
+
+    // Run the init function when the page loads
+    init();
+  </script>
+</body>
+</html>
