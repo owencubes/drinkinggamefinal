@@ -39,73 +39,53 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-.header3 {
-  align-items: left;
-  position: fixed;
-  top: 0;
-  {# width: 100%; #}
-  {# background: rgba(0, 0, 0, 0.9); #}
-  color: white;
-  padding: 20px;
-  box-sizing: border-box;
-  z-index: 10;
-  text-align: left; /* Centering text horizontally */
-  display: flex;
-  flex-direction: column;
-  justify-content: left;
-}
+    .header3 {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 10;
+      text-align: center;
+    }
 
-.header3 h3 {
-  margin: 0 0 10px 0; /* Adjusting margin to give some space between the heading and the list */
-  font-size: 1.2rem;
-}
+    .header3 h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
 
-.header3 ul {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-}
+    .header3 ul {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 10px 0 0 0;
+      padding: 0;
+    }
 
-.header3 li {
-  background: rgba(255, 255, 255, 0.8);
-  color: #333;
-  margin: 0;
-  padding: 8px;
-  border-radius: 5px;
-  font-size: 0.9rem;
-}
-
+    .header3 li {
+      background: rgba(255, 255, 255, 0.8);
+      color: #333;
+      padding: 8px;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
 
     #content {
-      padding-top: 5px;
-      position: sticky;
+      margin-top: 80px;
     }
 
     @media (max-width: 600px) {
       h1 {
         font-size: 1.5rem;
       }
-    .header3 {
-        position: relative;
-    }
       li {
         font-size: 0.9rem;
         padding: 10px;
       }
-
-      .header3 h3 {
-        font-size: 1rem;
-      }
-
       .header3 ul {
         flex-direction: column;
-      }
-    
-      .header3 li {
-        font-size: 0.8rem;
       }
     }
   </style>
@@ -113,10 +93,8 @@
 <body>
   <div class="header3">
     <h3>All Time Alcoholics</h3>
-    <ul>
-      <li>🥇 Owen - 11</li>
-      <li>🥈 Cole - 9</li>
-      <li>🥉 Daniel - 7</li>
+    <ul id="topPlayers">
+      <li>🥇 Loading...</li>
     </ul>
   </div>
 
@@ -126,7 +104,6 @@
   </div>
 
   <script>
-    // Helper function to fetch leaderboard data and render it
     async function fetchLeaderboard() {
       try {
         const response = await fetch('https://drinkinggamefinal.onrender.com/leaderboard');
@@ -138,12 +115,16 @@
           contentDiv.innerHTML = '<p>No players yet. Scan the NFC to register!</p>';
         } else {
           const list = leaderboard
-            .map(
-              (player, i) =>
-                `<li>${i === 0 ? `👑 ${player.name}` : player.name} <span>${player.score} Drinks</span></li>`
-            )
-            .join('');
+            .map((player, i) => 
+              `<li>${i === 0 ? `👑 ${player.name}` : player.name} <span>${player.score} Drinks</span></li>`
+            ).join('');
           contentDiv.innerHTML = `<ul>${list}</ul>`;
+
+          // Update "All Time Alcoholics" section
+          document.getElementById('topPlayers').innerHTML = leaderboard.slice(0, 3).map((player, i) => {
+            const medals = ["🥇", "🥈", "🥉"];
+            return `<li>${medals[i] || ''} ${player.name} - ${player.score}</li>`;
+          }).join('');
         }
       } catch (err) {
         console.error('Error fetching leaderboard:', err);
@@ -151,16 +132,18 @@
       }
     }
 
-    // Function to send scan data to the backend
     async function sendScanData() {
       try {
-        const browserId = localStorage.getItem('browserId') || crypto.randomUUID();
-        localStorage.setItem('browserId', browserId);
+        let browserId = localStorage.getItem('browserId');
+        if (!browserId) {
+          browserId = crypto.randomUUID();
+          localStorage.setItem('browserId', browserId);
+        }
 
         let name = localStorage.getItem('name');
         if (!name) {
           name = prompt('Enter your name:');
-          if (!name) return; // Stop if no name is entered
+          if (!name) return;
           localStorage.setItem('name', name);
         }
 
@@ -171,10 +154,7 @@
         });
 
         if (!response.ok) throw new Error('Failed to send scan data');
-        const data = await response.json();
-        console.log('Scan data sent successfully:', data);
-
-        // Refresh leaderboard after updating score
+        await response.json();
         fetchLeaderboard();
       } catch (err) {
         console.error('Error sending scan data:', err);
@@ -182,16 +162,11 @@
       }
     }
 
-    // Initialize the page
     async function init() {
-      // Trigger the scan flow
       await sendScanData();
-
-      // Load and display the leaderboard
       fetchLeaderboard();
     }
 
-    // Run the init function when the page loads
     init();
   </script>
 </body>
